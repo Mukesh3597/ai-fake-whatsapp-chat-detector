@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Fake WhatsApp Chat Detector</title>
+  <style>
+    body { font-family: Arial; background: #f4f6f8; padding: 40px; }
+    .box {
+      max-width: 600px; margin: auto; background: white; padding: 22px;
+      border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+    textarea {
+      width: 100%; height: 150px; padding: 10px; font-size: 14px;
+      border-radius: 10px; border: 1px solid #ccc; resize: vertical;
+    }
+    button {
+      padding: 12px; width: 100%; margin-top: 12px; border: none;
+      border-radius: 10px; font-size: 16px; cursor: pointer;
+    }
+    .small { color:#444; font-size: 13px; margin-top: 8px; line-height: 1.4; }
+    .result {
+      margin-top: 18px; padding: 14px; border-radius: 12px;
+      background: #f7f7f7; border: 1px solid #e7e7e7;
+    }
+    .tag {
+      display: inline-block; padding: 6px 10px; border-radius: 999px;
+      font-weight: bold; margin-right: 8px;
+    }
+    .k {
+      display:inline-block; padding:6px 10px; border-radius:999px;
+      background:#eef2ff; margin:4px 6px 0 0; font-size: 13px;
+    }
+    .scores {
+      margin-top: 10px; padding: 10px; border-radius: 12px;
+      background: #ffffff; border: 1px dashed #d7d7d7;
+      font-size: 13px;
+    }
+    .barwrap { margin-top: 8px; }
+    .barlabel {
+      display:flex; justify-content:space-between; font-size:12px; color:#333;
+      margin-top: 8px;
+    }
+    .bar { height: 10px; border-radius: 999px; background: #e9edf3; overflow: hidden; }
+    .fill { height: 100%; width: 0%; background: #9aa7b4; }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2>🤖 AI Fake WhatsApp Chat Detector</h2>
+  <p class="small">
+    Paste chat/message → Check → AI will label it (Entertainment + Awareness).<br>
+    ⚠️ 100% guarantee नहीं — लेकिन scam/forward patterns जल्दी पकड़ लेता है।
+  </p>
+
+  <form method="POST">
+    <textarea name="chat" placeholder="Paste WhatsApp chat here...">{{ chat }}</textarea>
+    <button type="submit">✅ Check Chat</button>
+  </form>
+
+  {% if result %}
+    <div class="result">
+      <div>
+        <strong>Result:</strong>
+
+        {% if result == "real" %}
+          <span class="tag" style="background:#e8fff0;">😇 REAL</span>
+        {% elif result == "fake" %}
+          <span class="tag" style="background:#ffe8e8;">🤥 FAKE</span>
+        {% else %}
+          <span class="tag" style="background:#fff6da;">⚠️ SUSPICIOUS</span>
+        {% endif %}
+
+        <span class="tag" style="background:#eaf0ff;">Confidence: {{ confidence }}%</span>
+      </div>
+
+      {% if explain %}
+        <div class="small" style="margin-top:10px;">
+          <strong>Explanation:</strong> {{ explain }}
+        </div>
+      {% endif %}
+
+      {% if keywords and keywords|length > 0 %}
+        <div class="small" style="margin-top:10px;">
+          <strong>Why this result?</strong> These words influenced AI:
+        </div>
+        <div>
+          {% for w in keywords %}
+            <span class="k">{{ w }}</span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="small" style="margin-top:10px;">
+          No strong keywords detected from this message.
+        </div>
+      {% endif %}
+
+      <div class="scores">
+        <div><strong>Scores (probability):</strong></div>
+
+        <div class="small" style="margin-top:6px;">
+          Real: <b>{{ prob_map.get("real", 0) }}%</b> |
+          Suspicious: <b>{{ prob_map.get("suspicious", 0) }}%</b> |
+          Fake: <b>{{ prob_map.get("fake", 0) }}%</b>
+        </div>
+
+        <!-- ✅ SAFE bars (no crash if key missing) -->
+        <div class="barwrap">
+
+          <div class="barlabel">
+            <span>Real</span>
+            <span>{{ prob_map["real"] if "real" in prob_map else 0 }}%</span>
+          </div>
+          <div class="bar">
+            <div class="fill"
+                 style="width: {{ prob_map['real'] if 'real' in prob_map else 0 }}%; background:#38b000;">
+            </div>
+          </div>
+
+          <div class="barlabel">
+            <span>Suspicious</span>
+            <span>{{ prob_map["suspicious"] if "suspicious" in prob_map else 0 }}%</span>
+          </div>
+          <div class="bar">
+            <div class="fill"
+                 style="width: {{ prob_map['suspicious'] if 'suspicious' in prob_map else 0 }}%; background:#f4b400;">
+            </div>
+          </div>
+
+          <div class="barlabel">
+            <span>Fake</span>
+            <span>{{ prob_map["fake"] if "fake" in prob_map else 0 }}%</span>
+          </div>
+          <div class="bar">
+            <div class="fill"
+                 style="width: {{ prob_map['fake'] if 'fake' in prob_map else 0 }}%; background:#d00000;">
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="small" style="margin-top:12px;">
+        Tip: Scam messages में अक्सर शब्द होते हैं:
+        <b>OTP, blocked, KYC, urgent, click, refund, win, fee</b>.
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+</body>
+</html>

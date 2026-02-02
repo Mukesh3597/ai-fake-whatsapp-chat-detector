@@ -1,0 +1,69 @@
+text,label
+"Hey, where are you?",real
+"I will reach in 10 minutes",real
+"Ok fine, see you tomorrow",real
+"Call me when free",real
+"Thanks for the help",real
+"Are you coming today?",real
+"Good morning",real
+"Good night",real
+"Let's meet at 5 pm",real
+"Send me the notes",real
+"Bro, kya kar raha hai?",real
+"Kal milte hain",real
+"Phone recharge kar diya?",real
+"Main ghar aa gaya",real
+"Please call me",real
+"Sorry, I was busy",real
+"Okay done",real
+"Yes, sure",real
+"No problem",real
+"See you soon",real
+
+"Forwarded many times",suspicious
+"This message is forwarded",suspicious
+"Send this to 10 people",suspicious
+"Share urgently",suspicious
+"Don't ignore this message",suspicious
+"Forward to all your contacts",suspicious
+"100% true share now",suspicious
+"अगर आप इसे नहीं भेजोगे तो नुकसान होगा",suspicious
+"आज ही सबको भेजें",suspicious
+"Breaking news forwarded",suspicious
+"Please forward immediately",suspicious
+"यह संदेश आगे भेजा गया है",suspicious
+"Viral message share fast",suspicious
+"Copy paste and forward",suspicious
+"Do not delete this message",suspicious
+"Forwarded as received",suspicious
+"Important message share",suspicious
+"इसको 5 ग्रुप में भेजो",suspicious
+"सबको भेजो जल्दी",suspicious
+"Forwarded",suspicious
+
+"Your bank account will be blocked today",fake
+"Send OTP now or account blocked",fake
+"Bank KYC expired update now",fake
+"Verify details immediately",fake
+"You won a lottery click link",fake
+"Congratulations you won iPhone click here",fake
+"Your UPI is blocked update now",fake
+"Pay ₹10 to activate account",fake
+"Refund pending click link now",fake
+"Your SIM will be suspended today",fake
+"Police case registered against you pay fine",fake
+"Loan approved pay processing fee",fake
+"Income tax refund approved click link",fake
+"Your parcel is stuck pay customs fee",fake
+"WhatsApp will close your account verify now",fake
+"Urgent: update KYC otherwise account freeze",fake
+"Free recharge claim now",fake
+"Click this link to receive money",fake
+"Send your OTP to confirm payment",fake
+"Your ATM is blocked call this number",fake
+"I love you",real
+"Miss you",real
+"Good morning jaan",real
+"Take care",real
+"Love you too",real
+
