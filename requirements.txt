@@ -1,12 +1,10 @@
 flask==3.0.3
 gunicorn==22.0.0
 
-# ML (Chat)
-numpy==1.23.5
-pandas==2.0.3
-scikit-learn==1.2.2
-joblib==1.3.2
+joblib==1.4.2
+scikit-learn==1.5.1
 
-# Image (TF)
-tensorflow==2.12.0
+numpy==1.23.5
 pillow==10.4.0
+
+tensorflow==2.12.0
