@@ -1,13 +1,7 @@
 flask==3.0.3
 gunicorn==22.0.0
-
-# ML (text)
 scikit-learn==1.5.1
 joblib==1.4.2
-
-# Image model
 tensorflow-cpu==2.13.1
-
-# Utils
 Pillow==10.4.0
 numpy==1.26.4
