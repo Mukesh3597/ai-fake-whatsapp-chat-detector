@@ -15,16 +15,19 @@ app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads")
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB
 
+
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
 # -----------------------------
-# Load models (safe paths)
+# Load Models (safe paths)
 # -----------------------------
 CHAT_MODEL_PATH = os.path.join(MODELS_DIR, "chat_detector_model.pkl")
 IMAGE_MODEL_PATH = os.path.join(MODELS_DIR, "ai_image_detector.h5")
@@ -34,8 +37,9 @@ image_model = tf.keras.models.load_model(IMAGE_MODEL_PATH)
 
 IMG_SIZE = (224, 224)
 
+
 # -----------------------------
-# Chat prediction
+# Chat Prediction
 # -----------------------------
 def predict_with_details(text: str):
     pred = chat_model.predict([text])[0]
@@ -52,6 +56,7 @@ def predict_with_details(text: str):
     else:
         explain = "Looks like normal human conversation."
 
+    # Top keywords from TF-IDF
     tfidf = chat_model.named_steps["tfidf"]
     X_vec = tfidf.transform([text])
     feature_names = tfidf.get_feature_names_out()
@@ -71,8 +76,9 @@ def predict_with_details(text: str):
 
     return pred, confidence, keywords, prob_map, explain
 
+
 # -----------------------------
-# Image prediction
+# Image Prediction
 # -----------------------------
 def predict_image(file_path: str):
     img = Image.open(file_path).convert("RGB")
@@ -82,7 +88,7 @@ def predict_image(file_path: str):
 
     y = image_model.predict(x, verbose=0)
 
-    # sigmoid output
+    # sigmoid output (1)
     if y.shape[-1] == 1:
         prob_fake = float(y[0][0])
         label = "FAKE (AI-Generated)" if prob_fake >= 0.5 else "REAL"
@@ -90,27 +96,31 @@ def predict_image(file_path: str):
         scores = {"real": round((1 - prob_fake) * 100, 2), "fake": round(prob_fake * 100, 2)}
         return label, confidence, scores
 
-    # softmax output (2 classes)
+    # softmax output (2)
     probs = y[0].astype(float)
     idx = int(np.argmax(probs))
     confidence = round(float(probs[idx]) * 100, 2)
 
-    # default mapping
+    # default mapping: [real, fake]
     class_names = ["REAL", "FAKE (AI-Generated)"]
     label = class_names[idx]
     scores = {"real": round(float(probs[0]) * 100, 2), "fake": round(float(probs[1]) * 100, 2)}
     return label, confidence, scores
 
+
 # -----------------------------
-# ✅ IMPORTANT: HOME ROUTE (GET) — यही missing होता है
+# Routes
 # -----------------------------
 @app.route("/", methods=["GET"])
 def home():
     return render_template(
         "index.html",
+        # chat
         result=None, confidence=None, keywords=[], prob_map={}, explain=None, chat="",
+        # image
         img_result=None, img_confidence=None, img_scores=None, img_url=None
     )
+
 
 @app.route("/check-chat", methods=["POST"])
 def check_chat():
@@ -128,6 +138,7 @@ def check_chat():
         result=result, confidence=confidence, keywords=keywords, prob_map=prob_map, explain=explain, chat=chat_text,
         img_result=None, img_confidence=None, img_scores=None, img_url=None
     )
+
 
 @app.route("/check-image", methods=["POST"])
 def check_image():
