@@ -1,13 +1,12 @@
 import os
-from flask import Flask, render_template, request
-from werkzeug.utils import secure_filename
 import joblib
-
 import numpy as np
 from PIL import Image
+from flask import Flask, render_template, request
+from werkzeug.utils import secure_filename
 
 # -----------------------------
-# TensorFlow optional (Render पर अक्सर issue करता है)
+# TensorFlow (optional)
 # -----------------------------
 TF_OK = True
 try:
@@ -22,6 +21,7 @@ app = Flask(__name__)
 # Paths / Config
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -29,18 +29,22 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB
 
+CHAT_MODEL_PATH = os.path.join(MODELS_DIR, "chat_detector_model.pkl")
+IMAGE_MODEL_PATH = os.path.join(MODELS_DIR, "ai_image_detector.h5")
+
+IMG_SIZE = (224, 224)
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 # -----------------------------
-# Load Models (safe paths)
+# Load Chat model (required)
 # -----------------------------
-CHAT_MODEL_PATH = os.path.join(MODELS_DIR, "chat_detector_model.pkl")
 chat_model = joblib.load(CHAT_MODEL_PATH)
 
-IMAGE_MODEL_PATH = os.path.join(MODELS_DIR, "ai_image_detector.h5")
+# -----------------------------
+# Load Image model (optional)
+# -----------------------------
 image_model = None
 if TF_OK and os.path.exists(IMAGE_MODEL_PATH):
     try:
@@ -48,15 +52,11 @@ if TF_OK and os.path.exists(IMAGE_MODEL_PATH):
     except Exception:
         image_model = None
 
-IMG_SIZE = (224, 224)
-
-
 # -----------------------------
-# Chat Prediction
+# Chat Prediction (same)
 # -----------------------------
 def predict_with_details(text: str):
     pred = chat_model.predict([text])[0]
-
     proba = chat_model.predict_proba([text])[0]
     classes = list(chat_model.classes_)
     prob_map = {classes[i]: round(float(proba[i]) * 100, 2) for i in range(len(classes))}
@@ -69,44 +69,39 @@ def predict_with_details(text: str):
     else:
         explain = "Looks like normal human conversation."
 
-    # Top keywords (TF-IDF)
-    tfidf = chat_model.named_steps.get("tfidf")
-    keywords = []
-    if tfidf is not None:
-        X_vec = tfidf.transform([text])
-        feature_names = tfidf.get_feature_names_out()
-        row = X_vec.toarray()[0]
+    tfidf = chat_model.named_steps["tfidf"]
+    X_vec = tfidf.transform([text])
+    feature_names = tfidf.get_feature_names_out()
+    row = X_vec.toarray()[0]
 
-        top_idx = row.argsort()[::-1]
-        for i in top_idx:
-            if row[i] <= 0:
-                break
-            w = feature_names[i]
-            if len(w) < 3:
-                continue
-            keywords.append(w)
-            if len(keywords) == 5:
-                break
+    top_idx = row.argsort()[::-1]
+    keywords = []
+    for i in top_idx:
+        if row[i] <= 0:
+            break
+        w = feature_names[i]
+        if len(w) < 3:
+            continue
+        keywords.append(w)
+        if len(keywords) == 5:
+            break
 
     return pred, confidence, keywords, prob_map, explain
 
-
 # -----------------------------
-# Image Prediction
+# Image Prediction (optional)
 # -----------------------------
 def predict_image(file_path: str):
-    if (not TF_OK) or (image_model is None):
-        return "Image detector not available on this server (TensorFlow disabled).", None, None
+    if not TF_OK or image_model is None:
+        return "Image detector disabled on server (TensorFlow not installed).", None, None
 
     img = Image.open(file_path).convert("RGB")
     img = img.resize(IMG_SIZE)
-
     x = np.array(img, dtype=np.float32) / 255.0
-    x = np.expand_dims(x, axis=0)  # ✅ FIX
+    x = np.expand_dims(x, axis=0)
 
     y = image_model.predict(x, verbose=0)
 
-    # sigmoid (1 output) or softmax (2 outputs)
     if y.shape[-1] == 1:
         prob_fake = float(y[0][0])
         label = "FAKE (AI-Generated)" if prob_fake >= 0.5 else "REAL"
@@ -116,17 +111,14 @@ def predict_image(file_path: str):
         probs = y[0].astype(float)
         idx = int(np.argmax(probs))
         conf = round(float(probs[idx]) * 100, 2)
-
-        class_names = ["REAL", "FAKE (AI-Generated)"]  # जरूरत पड़े तो swap कर देना
+        class_names = ["REAL", "FAKE (AI-Generated)"]
         label = class_names[idx] if idx < len(class_names) else "UNKNOWN"
-
         scores = {
             "real": round(float(probs[0]) * 100, 2) if len(probs) > 0 else 0,
             "fake": round(float(probs[1]) * 100, 2) if len(probs) > 1 else 0,
         }
 
     return label, conf, scores
-
 
 # -----------------------------
 # Routes
@@ -135,17 +127,13 @@ def predict_image(file_path: str):
 def home():
     return render_template(
         "index.html",
-        # chat
         result=None, confidence=None, keywords=[], prob_map={}, explain=None, chat="",
-        # image
         img_result=None, img_confidence=None, img_scores=None, img_url=None
     )
-
 
 @app.route("/check-chat", methods=["POST"])
 def check_chat():
     chat_text = request.form.get("chat", "").strip()
-
     result = confidence = explain = None
     keywords = []
     prob_map = {}
@@ -158,7 +146,6 @@ def check_chat():
         result=result, confidence=confidence, keywords=keywords, prob_map=prob_map, explain=explain, chat=chat_text,
         img_result=None, img_confidence=None, img_scores=None, img_url=None
     )
-
 
 @app.route("/check-image", methods=["POST"])
 def check_image():
@@ -191,13 +178,5 @@ def check_image():
         img_result=label, img_confidence=conf, img_scores=scores, img_url=img_url
     )
 
-
-# Health check for Render (optional)
-@app.route("/healthz")
-def healthz():
-    return {"ok": True}
-
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "5000"))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=5000)
