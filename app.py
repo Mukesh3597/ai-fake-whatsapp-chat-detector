@@ -1,10 +1,14 @@
 from flask import Flask, render_template, request
 import joblib
+import os
 
 app = Flask(__name__)
 
-# Load trained model (Pipeline: tfidf + clf)
-model = joblib.load("chat_detector_model.pkl")
+# ✅ Always load model using absolute path (works on Render + local)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "chat_detector_model.pkl")
+
+model = joblib.load(MODEL_PATH)
 
 
 def predict_with_details(text: str):
@@ -28,23 +32,27 @@ def predict_with_details(text: str):
         explain = "Looks like normal human conversation."
 
     # 5) Top keywords from TF-IDF (from input text)
-    tfidf = model.named_steps["tfidf"]
-    X_vec = tfidf.transform([text])
-    feature_names = tfidf.get_feature_names_out()
-    row = X_vec.toarray()[0]
+    try:
+        tfidf = model.named_steps["tfidf"]
+        X_vec = tfidf.transform([text])
+        feature_names = tfidf.get_feature_names_out()
+        row = X_vec.toarray()[0]
 
-    top_idx = row.argsort()[::-1]
-    keywords = []
-    for i in top_idx:
-        if row[i] <= 0:
-            break
-        w = feature_names[i]
-        if len(w) < 3:
-            continue
-        keywords.append(w)
-        if len(keywords) == 5:
-            break
+        top_idx = row.argsort()[::-1]
+        keywords = []
+        for i in top_idx:
+            if row[i] <= 0:
+                break
+            w = feature_names[i]
+            if len(w) < 3:
+                continue
+            keywords.append(w)
+            if len(keywords) == 5:
+                break
+    except Exception:
+        keywords = []
 
+    # ✅ Return 5 things
     return pred, confidence, keywords, prob_map, explain
 
 
@@ -60,7 +68,7 @@ def index():
     if request.method == "POST":
         chat_text = request.form.get("chat", "").strip()
         if chat_text:
-            # ✅ NOW unpack 5 values
+            # ✅ unpack 5 values
             result, confidence, keywords, prob_map, explain = predict_with_details(chat_text)
 
     return render_template(
@@ -76,6 +84,3 @@ def index():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-if __name__ == "__main__":
-    app.run()
