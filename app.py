@@ -1,19 +1,20 @@
 import os
 import joblib
 import numpy as np
-from PIL import Image
 from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
 
 # -----------------------------
-# TensorFlow (optional)
+# Try TensorFlow (Render पर fail हुआ तो app चलती रहे)
 # -----------------------------
 TF_OK = True
 try:
     import tensorflow as tf
+    from PIL import Image
 except Exception:
     TF_OK = False
     tf = None
+    Image = None
 
 app = Flask(__name__)
 
@@ -21,7 +22,6 @@ app = Flask(__name__)
 # Paths / Config
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -29,34 +29,37 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB
 
-CHAT_MODEL_PATH = os.path.join(MODELS_DIR, "chat_detector_model.pkl")
-IMAGE_MODEL_PATH = os.path.join(MODELS_DIR, "ai_image_detector.h5")
-
-IMG_SIZE = (224, 224)
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
 # -----------------------------
-# Load Chat model (required)
+# Load Chat Model
 # -----------------------------
+CHAT_MODEL_PATH = os.path.join(MODELS_DIR, "chat_detector_model.pkl")
 chat_model = joblib.load(CHAT_MODEL_PATH)
 
 # -----------------------------
-# Load Image model (optional)
+# Load Image Model (only if TF available)
 # -----------------------------
+IMAGE_MODEL_PATH = os.path.join(MODELS_DIR, "ai_image_detector.h5")
 image_model = None
+IMG_SIZE = (224, 224)
+
 if TF_OK and os.path.exists(IMAGE_MODEL_PATH):
     try:
         image_model = tf.keras.models.load_model(IMAGE_MODEL_PATH)
     except Exception:
         image_model = None
 
+
 # -----------------------------
-# Chat Prediction (same)
+# Chat Prediction
 # -----------------------------
 def predict_with_details(text: str):
     pred = chat_model.predict([text])[0]
+
     proba = chat_model.predict_proba([text])[0]
     classes = list(chat_model.classes_)
     prob_map = {classes[i]: round(float(proba[i]) * 100, 2) for i in range(len(classes))}
@@ -69,6 +72,7 @@ def predict_with_details(text: str):
     else:
         explain = "Looks like normal human conversation."
 
+    # Top keywords from TF-IDF
     tfidf = chat_model.named_steps["tfidf"]
     X_vec = tfidf.transform([text])
     feature_names = tfidf.get_feature_names_out()
@@ -88,8 +92,9 @@ def predict_with_details(text: str):
 
     return pred, confidence, keywords, prob_map, explain
 
+
 # -----------------------------
-# Image Prediction (optional)
+# Image Prediction
 # -----------------------------
 def predict_image(file_path: str):
     if not TF_OK or image_model is None:
@@ -102,23 +107,27 @@ def predict_image(file_path: str):
 
     y = image_model.predict(x, verbose=0)
 
+    # sigmoid (1 output)
     if y.shape[-1] == 1:
         prob_fake = float(y[0][0])
         label = "FAKE (AI-Generated)" if prob_fake >= 0.5 else "REAL"
-        conf = round((prob_fake if prob_fake >= 0.5 else (1 - prob_fake)) * 100, 2)
+        confidence = round((prob_fake if prob_fake >= 0.5 else (1 - prob_fake)) * 100, 2)
         scores = {"real": round((1 - prob_fake) * 100, 2), "fake": round(prob_fake * 100, 2)}
-    else:
-        probs = y[0].astype(float)
-        idx = int(np.argmax(probs))
-        conf = round(float(probs[idx]) * 100, 2)
-        class_names = ["REAL", "FAKE (AI-Generated)"]
-        label = class_names[idx] if idx < len(class_names) else "UNKNOWN"
-        scores = {
-            "real": round(float(probs[0]) * 100, 2) if len(probs) > 0 else 0,
-            "fake": round(float(probs[1]) * 100, 2) if len(probs) > 1 else 0,
-        }
+        return label, confidence, scores
 
-    return label, conf, scores
+    # softmax (2 outputs)
+    probs = y[0].astype(float)
+    idx = int(np.argmax(probs))
+    confidence = round(float(probs[idx]) * 100, 2)
+
+    class_names = ["REAL", "FAKE (AI-Generated)"]  # अगर training order उल्टा हो तो swap कर देना
+    label = class_names[idx] if idx < len(class_names) else "UNKNOWN"
+    scores = {
+        "real": round(float(probs[0]) * 100, 2) if len(probs) > 0 else 0,
+        "fake": round(float(probs[1]) * 100, 2) if len(probs) > 1 else 0,
+    }
+    return label, confidence, scores
+
 
 # -----------------------------
 # Routes
@@ -131,9 +140,11 @@ def home():
         img_result=None, img_confidence=None, img_scores=None, img_url=None
     )
 
+
 @app.route("/check-chat", methods=["POST"])
 def check_chat():
     chat_text = request.form.get("chat", "").strip()
+
     result = confidence = explain = None
     keywords = []
     prob_map = {}
@@ -146,6 +157,7 @@ def check_chat():
         result=result, confidence=confidence, keywords=keywords, prob_map=prob_map, explain=explain, chat=chat_text,
         img_result=None, img_confidence=None, img_scores=None, img_url=None
     )
+
 
 @app.route("/check-image", methods=["POST"])
 def check_image():
@@ -178,7 +190,7 @@ def check_image():
         img_result=label, img_confidence=conf, img_scores=scores, img_url=img_url
     )
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
-if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
