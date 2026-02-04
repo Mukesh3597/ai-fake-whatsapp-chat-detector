@@ -67,3 +67,154 @@ text,label
 "Take care",real
 "Love you too",real
 
+text,label
+"Hey, where are you?",real
+"I will reach in 10 minutes",real
+"Ok fine, see you tomorrow",real
+"Call me when free",real
+"Thanks for the help",real
+"Are you coming today?",real
+"Good morning",real
+"Good night",real
+"Let's meet at 5 pm",real
+"Send me the notes",real
+"Bro, kya kar raha hai?",real
+"Kal milte hain",real
+"Phone recharge kar diya?",real
+"Main ghar aa gaya",real
+"Please call me",real
+"Sorry, I was busy",real
+"Okay done",real
+"Yes, sure",real
+"No problem",real
+"See you soon",real
+"I love you",real
+"Miss you",real
+"Good morning jaan",real
+"Take care",real
+"Love you too",real
+"Reached home safely",real
+"Are you free now?",real
+"Message me later",real
+"Busy right now",real
+"On the way",real
+"Class start ho gayi",real
+"Meeting cancel ho gayi",real
+"Thoda late ho jaunga",real
+"Food kha liya?",real
+"Papa ka phone aaya tha",real
+"आज मौसम अच्छा है",real
+"कल exam है",real
+"Assignment submit kar di",real
+"Video call kare?",real
+"Ok understood",real
+
+"Forwarded many times",suspicious
+"This message is forwarded",suspicious
+"Send this to 10 people",suspicious
+"Share urgently",suspicious
+"Don't ignore this message",suspicious
+"Forward to all your contacts",suspicious
+"100% true share now",suspicious
+"अगर आप इसे नहीं भेजोगे तो नुकसान होगा",suspicious
+"आज ही सबको भेजें",suspicious
+"Breaking news forwarded",suspicious
+"Please forward immediately",suspicious
+"यह संदेश आगे भेजा गया है",suspicious
+"Viral message share fast",suspicious
+"Copy paste and forward",suspicious
+"Do not delete this message",suspicious
+"Forwarded as received",suspicious
+"Important message share",suspicious
+"इसको 5 ग्रुप में भेजो",suspicious
+"सबको भेजो जल्दी",suspicious
+"Forwarded",suspicious
+"Government message forward",suspicious
+"WhatsApp warning share fast",suspicious
+"सबूत भेजा गया है आगे भेजो",suspicious
+"आज की बड़ी खबर forward",suspicious
+"यह मैसेज सभी को भेजें",suspicious
+"Alert message share",suspicious
+"Forward for safety",suspicious
+"अगर यह सच है तो forward करो",suspicious
+"Public warning message",suspicious
+"Forward without editing",suspicious
+
+"Your bank account will be blocked today",fake
+"Send OTP now or account blocked",fake
+"Bank KYC expired update now",fake
+"Verify details immediately",fake
+"You won a lottery click link",fake
+"Congratulations you won iPhone click here",fake
+"Your UPI is blocked update now",fake
+"Pay ₹10 to activate account",fake
+"Refund pending click link now",fake
+"Your SIM will be suspended today",fake
+"Police case registered against you pay fine",fake
+"Loan approved pay processing fee",fake
+"Income tax refund approved click link",fake
+"Your parcel is stuck pay customs fee",fake
+"WhatsApp will close your account verify now",fake
+"Urgent: update KYC otherwise account freeze",fake
+"Free recharge claim now",fake
+"Click this link to receive money",fake
+"Send your OTP to confirm payment",fake
+"Your ATM is blocked call this number",fake
+"Jio number will be deactivated today recharge now",fake
+"Airtel SIM blocked due to non KYC",fake
+"FASTag blocked recharge immediately",fake
+"Electricity will be disconnected today",fake
+"Gas subsidy stopped update KYC",fake
+"Pay bill now to avoid disconnection",fake
+"Your card used for fraud verify now",fake
+"Suspicious login detected confirm now",fake
+"Account hacked click link to secure",fake
+"Bank will close your account today",fake
+"IRCTC refund failed update details",fake
+"Courier delivery failed pay charges",fake
+"Amazon account suspended verify",fake
+"Flipkart order on hold pay fee",fake
+"Prize money waiting claim today",fake
+"Government giving free money click",fake
+"PAN card will be blocked today",fake
+"Aadhaar suspended verify now",fake
+"Send OTP fast to stop transaction",fake
+"Your WhatsApp number flagged verify",fake
+"Final warning account closure today",fake
+"Your Jio number will be deactivated today. Recharge immediately to continue services",fake
+"Jio SIM expiry today. Click link to recharge now",fake
+"Your Jio plan expired. Recharge now to avoid incoming ban",fake
+"Jio number 8192994188 will be blocked today. Recharge now",fake
+"Your SIM services will stop tonight. Pay recharge fee immediately",fake
+"Jio KYC expired. Update now or number will be suspended",fake
+"Recharge ₹199 now to avoid SIM deactivation",fake
+"Jio incoming outgoing stopped. Click link to reactivate",fake
+"Final warning: Your Jio number will be cancelled today",fake
+"Jio free recharge offer expires today claim now",fake
+"Pay ₹10 to reactivate your Jio SIM",fake
+"Your Jio number is under verification update now",fake
+"Urgent: Jio number suspension in 2 hours",fake
+"Your SIM card will be blocked due to non-recharge",fake
+"Recharge immediately to avoid permanent disconnection",fake
+"Jio customer: Verify your number now",fake
+"Your prepaid balance expired recharge instantly",fake
+"Dear customer your Jio SIM will stop today",fake
+"Jio service alert recharge now",fake
+"Your recharge may expire soon please check",suspicious
+"Jio recharge reminder forwarded message",suspicious
+"Some users are getting SIM blocked message share carefully",suspicious
+"Check your SIM validity today",suspicious
+"Forwarded: many Jio numbers are getting suspended",suspicious
+"Recharge warning message share to all",suspicious
+"Jio users alert forwarded",suspicious
+"Possible SIM issue check balance",suspicious
+"Incoming calls may stop soon check recharge",suspicious
+"People saying Jio numbers are expiring",suspicious
+"Your Jio plan expires today. Please recharge using MyJio app",real
+"Recharge reminder from Jio. Dial *121# to check validity",real
+"Your current plan expires soon. Visit Jio official app",real
+"Balance low please recharge to continue services",real
+"Plan validity ends today",real
+"Recharge your number to enjoy uninterrupted services",real
+"Reminder: Your prepaid plan is about to expire",real
+"Thank you for using Jio services",real
