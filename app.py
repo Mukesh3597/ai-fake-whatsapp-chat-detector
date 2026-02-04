@@ -7,12 +7,12 @@ import joblib
 import numpy as np
 from PIL import Image, ImageStat
 
-app = Flask(_name_)
+app = Flask(__name__)
 
 # -----------------------------
 # Paths / Config
 # -----------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(_file_))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads")
 
@@ -192,7 +192,7 @@ def check_image():
     )
 
 
-if _name_ == "_main_":
+if __name__ == "_main_":
     app.run(host="0.0.0.0", port=5000, debug=False)
 
 
