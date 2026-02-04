@@ -2,11 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AI Fake WhatsApp Chat Detector</title>
+
+  <!-- ✅ SEO Title -->
+  <title>AI Fake WhatsApp Chat Detector | Check Real or Fake Messages</title>
+
+  <!-- ✅ SEO Meta Description -->
+  <meta name="description" content="Free AI tool to detect fake WhatsApp messages, scams, forwarded texts, recharge frauds and AI-generated images. Check real or fake instantly." />
+
+  <!-- ✅ SEO Keywords -->
+  <meta name="keywords" content="fake whatsapp message detector, whatsapp scam detector, real or fake message, otp scam detector, ai fake image detector, forwarded message checker" />
+
+  <meta name="author" content="Mukesh | AI Developer" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
     body { font-family: Arial; background: #f4f6f8; padding: 40px; }
     .box {
-      max-width: 650px; margin: auto; background: white; padding: 22px;
+      max-width: 720px; margin: auto; background: white; padding: 22px;
       border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.08);
     }
     textarea {
@@ -63,6 +75,16 @@
       margin-top: 10px;
       display:block;
     }
+
+    /* SEO content styling */
+    .seo-box{
+      margin-top: 22px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #fbfbfb;
+      border: 1px solid #eee;
+    }
+    ul { margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -74,6 +96,7 @@
     ⚠️ 100% guarantee नहीं — लेकिन scam/forward patterns जल्दी पकड़ लेता है।
   </p>
 
+  <!-- ✅ Chat form -->
   <form method="POST" action="/check-chat">
     <textarea name="chat" placeholder="Paste WhatsApp chat here...">{{ chat }}</textarea>
     <button type="submit">✅ Check Chat</button>
@@ -169,7 +192,7 @@
 
   <h2>🖼️ Fake Image Detector</h2>
   <p class="small">
-    Image upload करो → Check → बताएगा <b>REAL</b> या <b>FAKE (AI-Generated)</b> (demo model).
+    Image upload करो → Check → बताएगा <b>REAL</b> या <b>FAKE (AI-Generated)</b>.
   </p>
 
   <form method="POST" action="/check-image" enctype="multipart/form-data">
@@ -228,12 +251,29 @@
       {% endif %}
 
       <div class="small" style="margin-top:12px;">
-        Note: ये demo binary classifier है — perfect guarantee नहीं।
+        Note: ये demo classifier है — perfect guarantee नहीं।
       </div>
     </div>
   {% endif %}
-</div>
 
+  <!-- ✅ SEO Content (Google पढ़ेगा) -->
+  <div class="seo-box">
+    <h2>What is AI Fake WhatsApp Chat Detector?</h2>
+    <p class="small">
+      This AI-based tool helps detect fake WhatsApp messages such as recharge frauds,
+      OTP scams, forwarded misinformation and suspicious chain messages. It also provides
+      an AI-generated image detector output with confidence score.
+    </p>
+
+    <h3>Why use this tool?</h3>
+    <ul class="small">
+      <li>Detect scam/OTP/recharge fraud messages</li>
+      <li>Find forwarded/chain misinformation</li>
+      <li>Check AI-generated images with confidence</li>
+      <li>Easy to use – paste text or upload image</li>
+    </ul>
+  </div>
+
+</div>
 </body>
 </html>
-

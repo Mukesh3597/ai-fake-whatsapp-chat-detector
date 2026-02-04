@@ -1,11 +1,20 @@
 import os
-import math
-from flask import Flask, render_template, request
-from werkzeug.utils import secure_filename
 import joblib
-
 import numpy as np
-from PIL import Image, ImageStat
+from PIL import Image
+
+from flask import Flask, render_template, request, send_from_directory
+from werkzeug.utils import secure_filename
+
+# -----------------------------
+# Optional TensorFlow (server pe install ho to image model चलेगा)
+# -----------------------------
+try:
+    import tensorflow as tf
+    TF_OK = True
+except Exception:
+    tf = None
+    TF_OK = False
 
 app = Flask(__name__)
 
@@ -21,28 +30,65 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB
 
+CHAT_MODEL_PATH = os.path.join(MODELS_DIR, "chat_detector_model.pkl")
+IMAGE_MODEL_PATH = os.path.join(MODELS_DIR, "ai_image_detector.h5")
 
+IMG_SIZE = (224, 224)
+
+# -----------------------------
+# Helpers
+# -----------------------------
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 # -----------------------------
-# Load Chat Model (ONCE)
+# Load Models (Safe)
 # -----------------------------
-CHAT_MODEL_PATH = os.path.join(MODELS_DIR, "chat_detector_model.pkl")
-chat_model = joblib.load(CHAT_MODEL_PATH)
+chat_model = None
+chat_error = None
+if os.path.exists(CHAT_MODEL_PATH):
+    try:
+        chat_model = joblib.load(CHAT_MODEL_PATH)
+    except Exception as e:
+        chat_error = f"Chat model load error: {e}"
+else:
+    chat_error = "Chat model file not found in /models."
+
+image_model = None
+image_error = None
+if TF_OK and os.path.exists(IMAGE_MODEL_PATH):
+    try:
+        image_model = tf.keras.models.load_model(IMAGE_MODEL_PATH)
+    except Exception as e:
+        image_error = f"Image model load error: {e}"
+else:
+    if not TF_OK:
+        image_error = "TensorFlow not installed on server."
+    elif not os.path.exists(IMAGE_MODEL_PATH):
+        image_error = "Image model file not found in /models."
 
 
 # -----------------------------
-# Chat Prediction (same as before)
+# Chat Prediction
 # -----------------------------
 def predict_with_details(text: str):
+    if chat_model is None:
+        return None, None, [], {}, chat_error or "Chat model not available."
+
     pred = chat_model.predict([text])[0]
 
-    proba = chat_model.predict_proba([text])[0]
-    classes = list(chat_model.classes_)
-    prob_map = {classes[i]: round(float(proba[i]) * 100, 2) for i in range(len(classes))}
-    confidence = prob_map.get(pred, round(float(proba.max()) * 100, 2))
+    confidence = None
+    prob_map = {}
+
+    # If model supports probabilities
+    if hasattr(chat_model, "predict_proba"):
+        proba = chat_model.predict_proba([text])[0]
+        classes = list(chat_model.classes_)
+        prob_map = {classes[i]: round(float(proba[i]) * 100, 2) for i in range(len(classes))}
+        confidence = prob_map.get(pred, round(float(np.max(proba)) * 100, 2))
+    else:
+        confidence = 0
 
     if pred == "fake":
         explain = "Scam/Threat pattern detected (OTP/KYC/block/click/refund type words)."
@@ -51,79 +97,67 @@ def predict_with_details(text: str):
     else:
         explain = "Looks like normal human conversation."
 
-    tfidf = chat_model.named_steps["tfidf"]
-    X_vec = tfidf.transform([text])
-    feature_names = tfidf.get_feature_names_out()
-    row = X_vec.toarray()[0]
-
-    top_idx = row.argsort()[::-1]
+    # Top keywords (TF-IDF) if pipeline has tfidf step
     keywords = []
-    for i in top_idx:
-        if row[i] <= 0:
-            break
-        w = feature_names[i]
-        if len(w) < 3:
-            continue
-        keywords.append(w)
-        if len(keywords) == 5:
-            break
+    try:
+        tfidf = chat_model.named_steps["tfidf"]
+        X_vec = tfidf.transform([text])
+        feature_names = tfidf.get_feature_names_out()
+        row = X_vec.toarray()[0]
+        top_idx = row.argsort()[::-1]
+        for i in top_idx:
+            if row[i] <= 0:
+                break
+            w = feature_names[i]
+            if len(w) < 3:
+                continue
+            keywords.append(w)
+            if len(keywords) == 5:
+                break
+    except Exception:
+        pass
 
     return pred, confidence, keywords, prob_map, explain
 
 
 # -----------------------------
-# Image Prediction (DEPLOY-SAFE heuristic)
+# Image Prediction
 # -----------------------------
-def _sigmoid(x: float) -> float:
-    return 1.0 / (1.0 + math.exp(-x))
-
-
 def predict_image(file_path: str):
-    """
-    Heuristic demo detector:
-    - AI images often have smoother textures, different noise/edge stats etc.
-    - We'll compute a "fake score" from variance/contrast/entropy-ish signals.
-    This is NOT perfect, but gives stable output and deploys 100% on Render.
-    """
+    if not TF_OK or image_model is None:
+        return "Image detector disabled on server (TensorFlow not installed).", None, None
+
     img = Image.open(file_path).convert("RGB")
-    img_small = img.resize((256, 256))
+    img = img.resize(IMG_SIZE)
+    x = np.array(img, dtype=np.float32) / 255.0
+    x = np.expand_dims(x, axis=0)
 
-    # basic stats
-    stat = ImageStat.Stat(img_small)
-    mean = np.array(stat.mean)          # [R,G,B]
-    stdv = np.array(stat.stddev)        # [R,G,B]
-    contrast = float(stdv.mean())
+    y = image_model.predict(x, verbose=0)
 
-    # grayscale variance (texture)
-    gray = img_small.convert("L")
-    g = np.asarray(gray, dtype=np.float32) / 255.0
-    var = float(g.var())
-    mean_g = float(g.mean())
+    # sigmoid (1 output)
+    if y.shape[-1] == 1:
+        prob_fake = float(y[0][0])
+        label = "FAKE (AI-Generated)" if prob_fake >= 0.5 else "REAL"
+        conf = round((prob_fake if prob_fake >= 0.5 else (1 - prob_fake)) * 100, 2)
+        scores = {
+            "real": round((1 - prob_fake) * 100, 2),
+            "fake": round(prob_fake * 100, 2),
+        }
+        return label, conf, scores
 
-    # edge-like measure (simple gradient)
-    gx = np.abs(np.diff(g, axis=1)).mean()
-    gy = np.abs(np.diff(g, axis=0)).mean()
-    grad = float((gx + gy) / 2.0)
+    # softmax (2 outputs assumed [real, fake])
+    probs = y[0].astype(float)
+    idx = int(np.argmax(probs))
+    conf = round(float(probs[idx]) * 100, 2)
 
-    # a combined score (tuned to give nice confidence numbers)
-    # lower texture + low gradients often => "more fake-like"
-    raw = (
-        (0.60 - var) * 4.0 +
-        (0.08 - grad) * 10.0 +
-        (0.18 - (contrast / 255.0)) * 6.0 +
-        (abs(0.50 - mean_g)) * 1.5
-    )
-
-    prob_fake = float(np.clip(_sigmoid(raw), 0.01, 0.99))
-
-    label = "FAKE (AI-Generated)" if prob_fake >= 0.5 else "REAL"
-    confidence = round((prob_fake if prob_fake >= 0.5 else (1 - prob_fake)) * 100, 2)
+    class_names = ["REAL", "FAKE (AI-Generated)"]
+    label = class_names[idx] if idx < len(class_names) else "UNKNOWN"
 
     scores = {
-        "real": round((1 - prob_fake) * 100, 2),
-        "fake": round(prob_fake * 100, 2),
+        "real": round(float(probs[0]) * 100, 2) if len(probs) > 0 else 0,
+        "fake": round(float(probs[1]) * 100, 2) if len(probs) > 1 else 0,
     }
-    return label, confidence, scores
+    return label, conf, scores
 
 
 # -----------------------------
@@ -155,7 +189,7 @@ def check_chat():
         "index.html",
         # chat
         result=result, confidence=confidence, keywords=keywords, prob_map=prob_map, explain=explain, chat=chat_text,
-        # image
+        # image (blank)
         img_result=None, img_confidence=None, img_scores=None, img_url=None
     )
 
@@ -192,5 +226,27 @@ def check_image():
     )
 
 
+# ✅ sitemap.xml serve
+@app.route("/sitemap.xml")
+def sitemap():
+    return send_from_directory(app.root_path, "sitemap.xml")
+
+
+# ✅ robots.txt serve
+@app.route("/robots.txt")
+def robots():
+    return send_from_directory(app.root_path, "robots.txt")
+
+
+# ✅ health check (Render setting /healthz)
+@app.route("/healthz")
+def healthz():
+    return "ok", 200
+
+
+# -----------------------------
+# Main (local run)
+# -----------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
